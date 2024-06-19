@@ -1,9 +1,12 @@
 package com.example.seckill.web;
 
 import com.example.seckill.db.dao.SeckillActivityDao;
+import com.example.seckill.db.dao.SeckillCommodityDao;
 import com.example.seckill.db.po.SeckillActivity;
+import com.example.seckill.db.po.SeckillCommodity;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Controller;
+import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 
@@ -19,6 +22,9 @@ public class SeckillActivityController {
     @Autowired
     private SeckillActivityDao seckillActivityDao;
 
+    @Autowired
+    private SeckillCommodityDao seckillCommodityDao;
+
     // 发布页面
     @RequestMapping("/addSeckillActivity")
     public String addSeckillActivity() {
@@ -27,6 +33,7 @@ public class SeckillActivityController {
 
     // 提交发布
 //    @ResponseBody
+    // add_activity.html 中用到 <form th:action="@{/addSeckillActivityAction}" method="post">
     @RequestMapping("/addSeckillActivityAction")
     public String addSeckillActivityAction(
             @RequestParam("name") String name,
@@ -36,7 +43,7 @@ public class SeckillActivityController {
             @RequestParam("seckillNumber") long seckillNumber, // add_activity.html 中<input type="text" name="seckillNumber">
             @RequestParam("startTime") String startTime,
             @RequestParam("endTime") String endTime,
-            Map<String, Object> resultMap
+            Map<String, Object> resultMap // 把后端数据带到前段
     ) throws ParseException {
         startTime = startTime.substring(0, 10) + startTime.substring(11);
         endTime = endTime.substring(0, 10) + endTime.substring(11);
@@ -69,5 +76,27 @@ public class SeckillActivityController {
         List<SeckillActivity> seckillActivities = seckillActivityDao.querySeckillActivitysByStatus(1);
         resultMap.put("seckillActivities", seckillActivities); // seckill_activity.html 中用到 <tr th:each="seckillActivity : ${seckillActivities}">
         return "seckill_activity";
+    }
+
+    // seckill_activity.html 中用到 <a class='sui-btn btn-block btn-buy'  th:href="@{'/item/'+${seckillActivity.id}}" target='_blank'>立即抢购</a>
+    @RequestMapping("/item/{seckillActivityId}")
+    public String itemPage(
+            @PathVariable("seckillActivityId") long seckillActivityId,
+            Map<String, Object> resultMap
+    ) {
+        SeckillActivity seckillActivity = seckillActivityDao.querySeckillActivityById(seckillActivityId);
+        SeckillCommodity seckillCommodity = seckillCommodityDao.querySeckillCommodityById(seckillActivity.getCommodityId());
+
+        resultMap.put("seckillActivity", seckillActivity); // seckill_item.html 中用到 <em th:text="'￥'+${seckillActivity.seckillPrice}"></em>
+        resultMap.put("seckillCommodity", seckillCommodity); // seckill_item.html 中用到 <h4 th:text="${seckillCommodity.commodityName}"></h4>
+
+//        // 另一种写法
+//        resultMap.put("seckillPrice", seckillActivity.getSeckillPrice());
+//        resultMap.put("oldPrice", seckillActivity.getOldPrice());
+//        resultMap.put("commodityId", seckillActivity.getCommodityId());
+//        resultMap.put("commodityName", seckillCommodity.getCommodityName());
+//        resultMap.put("commodityDesc", seckillCommodity.getCommodityDesc());
+
+        return "seckill_item";
     }
 }
