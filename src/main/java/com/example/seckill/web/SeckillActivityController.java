@@ -10,6 +10,7 @@ import org.springframework.web.bind.annotation.RequestParam;
 import java.math.BigDecimal;
 import java.text.ParseException;
 import java.text.SimpleDateFormat;
+import java.util.List;
 import java.util.Map;
 
 @Controller
@@ -59,5 +60,14 @@ public class SeckillActivityController {
         resultMap.put("seckillActivity", seckillActivity); // add_success.html 中用到 <span th:text="${seckillActivity.name}">
 
         return "add_success";
+    }
+
+    @RequestMapping("/seckills")
+    public String activityList(
+            Map<String, Object> resultMap
+    ) {
+        List<SeckillActivity> seckillActivities = seckillActivityDao.querySeckillActivitysByStatus(1);
+        resultMap.put("seckillActivities", seckillActivities); // seckill_activity.html 中用到 <tr th:each="seckillActivity : ${seckillActivities}">
+        return "seckill_activity";
     }
 }
