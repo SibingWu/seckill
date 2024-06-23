@@ -11,6 +11,7 @@ public class SeckillOverSellService {
     @Autowired
     private SeckillActivityDao seckillActivityDao;
 
+    // 这么写会导致高并发状态下超卖
     public String processSeckill(long activityId) {
         SeckillActivity activity = seckillActivityDao.querySeckillActivityById(activityId);
         int availableStock = activity.getAvailableStock();
