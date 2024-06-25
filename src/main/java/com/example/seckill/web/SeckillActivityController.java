@@ -2,13 +2,17 @@ package com.example.seckill.web;
 
 import com.example.seckill.db.dao.SeckillActivityDao;
 import com.example.seckill.db.dao.SeckillCommodityDao;
+import com.example.seckill.db.po.Order;
 import com.example.seckill.db.po.SeckillActivity;
 import com.example.seckill.db.po.SeckillCommodity;
+import com.example.seckill.service.SeckillActivityService;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Controller;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
+import org.springframework.web.servlet.ModelAndView;
 
 import java.math.BigDecimal;
 import java.text.ParseException;
@@ -16,6 +20,7 @@ import java.text.SimpleDateFormat;
 import java.util.List;
 import java.util.Map;
 
+@Slf4j
 @Controller
 public class SeckillActivityController {
 
@@ -24,6 +29,9 @@ public class SeckillActivityController {
 
     @Autowired
     private SeckillCommodityDao seckillCommodityDao;
+
+    @Autowired
+    private SeckillActivityService seckillActivityService;
 
     // 发布页面
     @RequestMapping("/addSeckillActivity")
@@ -98,5 +106,38 @@ public class SeckillActivityController {
 //        resultMap.put("commodityDesc", seckillCommodity.getCommodityDesc());
 
         return "seckill_item";
+    }
+
+    /**
+     * 处理抢购请求
+     *
+     * @param userId
+     * @param seckillActivityId
+     * @return
+     */
+    @RequestMapping("/seckill/buy/{userId}/{seckillActivityId}")
+    public ModelAndView seckillCommodity(@PathVariable("userId") long userId, @PathVariable("seckillActivityId") long seckillActivityId) {
+        boolean stockValidateResult = false;
+
+        ModelAndView modelAndView = new ModelAndView();
+
+        try {
+            // 确认是否能够进行秒杀
+            stockValidateResult = seckillActivityService.seckillStockValidator(seckillActivityId); // 通过 lua 脚本判断库存是否充足
+            if (stockValidateResult) {
+                Order order = seckillActivityService.createOrder(seckillActivityId, userId);
+                // seckill_result.html 中用到 <em th:text="${resultInfo}"></em>
+                modelAndView.addObject("resultInfo", "秒杀成功，订单创建中，订单ID:" + order.getOrderNo());
+                // seckill_result.html 中用到 <a class="sui-btn btn-danger btn-xlarge" th:href="@{'/seckill/orderQuery/'+ ${orderNo}}"
+                modelAndView.addObject("orderNo", order.getOrderNo());
+            } else {
+                modelAndView.addObject("resultInfo", "对不起，商品库存不足");
+            }
+        } catch (Exception e) {
+            log.error("秒杀系统异常: " + e);
+            modelAndView.addObject("resultInfo", "秒杀失败");
+        }
+        modelAndView.setViewName("seckill_result");
+        return modelAndView;
     }
 }
