@@ -37,7 +37,7 @@ public class OrderConsumer implements RocketMQListener<MessageExt> {
 
         // 2. 扣减库存
         boolean lockStockResult = seckillActivityDao.lockStock(order.getSeckillActivityId());
-        // 订单状态 0:没有可用库存，无效订单 1:已创建等待付款
+        // 订单状态 0:没有可用库存，无效订单 1:已创建等待付款 2:支付完成
         if (lockStockResult) {
             // 锁定成功
             // 1:已创建等待付款

@@ -1,6 +1,7 @@
 package com.example.seckill.service;
 
 import com.alibaba.fastjson.JSON;
+import com.example.seckill.db.dao.OrderDao;
 import com.example.seckill.db.dao.SeckillActivityDao;
 import com.example.seckill.db.po.Order;
 import com.example.seckill.db.po.SeckillActivity;
@@ -8,6 +9,8 @@ import com.example.seckill.mq.RocketMQService;
 import com.example.seckill.util.SnowFlake;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
+
+import java.util.Date;
 
 @Service
 public class SeckillActivityService {
@@ -20,6 +23,9 @@ public class SeckillActivityService {
 
     @Autowired
     private RocketMQService rocketMQService;
+
+    @Autowired
+    private OrderDao orderDao;
 
 
     /**
@@ -66,5 +72,20 @@ public class SeckillActivityService {
         rocketMQService.sendMessage(topic, body);
 
         return order;
+    }
+
+    public void payOrderProcess(String orderNo) {
+        Order order = orderDao.queryOrder(orderNo);
+        // 真正在数据库扣减库存
+        boolean isDeductSuccessful = seckillActivityDao.deductStock(order.getSeckillActivityId());
+
+        if (isDeductSuccessful) {
+            order.setPayTime(new Date());
+            // 0: 没有可用库存，无效订单
+            // 1：已创建并等待支付
+            // 2：完成支付
+            order.setOrderStatus(2);
+            orderDao.updateOrder(order);
+        }
     }
 }
