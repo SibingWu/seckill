@@ -6,6 +6,7 @@ import com.example.seckill.db.dao.SeckillCommodityDao;
 import com.example.seckill.db.po.Order;
 import com.example.seckill.db.po.SeckillActivity;
 import com.example.seckill.db.po.SeckillCommodity;
+import com.example.seckill.service.RedisService;
 import com.example.seckill.service.SeckillActivityService;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -36,6 +37,8 @@ public class SeckillActivityController {
 
     @Autowired
     private OrderDao orderDao;
+    @Autowired
+    private RedisService redisService;
 
     // 发布页面
     @RequestMapping("/addSeckillActivity")
@@ -132,6 +135,14 @@ public class SeckillActivityController {
         ModelAndView modelAndView = new ModelAndView();
 
         try {
+            // 判断用户是否在已购名单中
+            if (redisService.isInLimitMember(seckillActivityId, userId)) {
+                // 提示用户已经在限购名单中，返回结果
+                modelAndView.addObject("resultInfo", "对不起，您已经在限购名单中");
+                modelAndView.setViewName("seckill_result");
+                return modelAndView;
+            }
+
             // 确认是否能够进行秒杀
             stockValidateResult = seckillActivityService.seckillStockValidator(seckillActivityId); // 通过 lua 脚本判断库存是否充足
             if (stockValidateResult) {
@@ -140,6 +151,9 @@ public class SeckillActivityController {
                 modelAndView.addObject("resultInfo", "秒杀成功，订单创建中，订单ID:" + order.getOrderNo());
                 // seckill_result.html 中用到 <a class="sui-btn btn-danger btn-xlarge" th:href="@{'/seckill/orderQuery/'+ ${orderNo}}"
                 modelAndView.addObject("orderNo", order.getOrderNo());
+
+                // 添加用户到已购名单中
+                redisService.addLimitMember(seckillActivityId, userId);
             } else {
                 modelAndView.addObject("resultInfo", "对不起，商品库存不足");
             }
@@ -180,7 +194,7 @@ public class SeckillActivityController {
 
     // order.html 中用到 <a class="sui-btn btn-danger btn-xlarge" th:href="@{'/seckill/payOrder/' + ${order.orderNo}}">支付订单金额</a>
     @RequestMapping("/seckill/payOrder/{orderNo}")
-    public String payOrder(@PathVariable("orderNo") String orderNo) {
+    public String payOrder(@PathVariable("orderNo") String orderNo) throws Exception {
         seckillActivityService.payOrderProcess(orderNo);
         /*
          * 在 payOrder 方法中使用 redirect 是为了在完成支付处理后重定向到另一个页面。这种做法有几个主要原因：

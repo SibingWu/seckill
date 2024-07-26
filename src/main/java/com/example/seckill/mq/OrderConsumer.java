@@ -27,7 +27,7 @@ public class OrderConsumer implements RocketMQListener<MessageExt> {
     private SeckillActivityDao seckillActivityDao;
 
     @Override
-    @Transactional
+    @Transactional // 用于声明方法或类应该被包含在一个事务中进行执行
     public void onMessage(MessageExt messageExt) {
         // 1. 解析“创建订单”的请求消息
         String message = new String(messageExt.getBody(), StandardCharsets.UTF_8);
