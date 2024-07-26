@@ -194,7 +194,7 @@ public class SeckillActivityController {
 
     // order.html 中用到 <a class="sui-btn btn-danger btn-xlarge" th:href="@{'/seckill/payOrder/' + ${order.orderNo}}">支付订单金额</a>
     @RequestMapping("/seckill/payOrder/{orderNo}")
-    public String payOrder(@PathVariable("orderNo") String orderNo) {
+    public String payOrder(@PathVariable("orderNo") String orderNo) throws Exception {
         seckillActivityService.payOrderProcess(orderNo);
         /*
          * 在 payOrder 方法中使用 redirect 是为了在完成支付处理后重定向到另一个页面。这种做法有几个主要原因：
