@@ -64,4 +64,14 @@ public class RedisService {
             return false;
         }
     }
+
+    /**
+     * 超时未支付 redis 库存回滚
+     * @param key
+     */
+    public void revertStock(String key) {
+        Jedis client = jedisPool.getResource();
+        client.incr(key);
+        client.close();
+    }
 }

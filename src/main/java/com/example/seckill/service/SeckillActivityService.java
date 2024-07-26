@@ -67,9 +67,18 @@ public class SeckillActivityService {
         order.setOrderAmount(seckillActivity.getSeckillPrice().longValue());
 
         // 2. 发送“创建订单”消息
-        String topic = "seckill_order";
+        String seckillOrderTopic = "seckill_order";
         String body = JSON.toJSONString(order);
-        rocketMQService.sendMessage(topic, body);
+        rocketMQService.sendMessage(seckillOrderTopic, body);
+
+        /*
+         * 3.发送“订单付款状态校验”的延迟消息
+         * 开源RocketMQ支持延迟消息，但是不支持秒级精度。默认支持18个level的延迟消息，这是通过broker端的messageDelayLevel配置项确定的，
+         * 如下:
+         * messageDelayLevel=1s 5s 10s 30s 1m 2m 3m 4m 5m 6m 7m 8m 9m 10m 20m 30m 1h 2h
+         */
+        String payStatusCheckTopic = "pay_status_check";
+        rocketMQService.sendDelayMessage(payStatusCheckTopic, JSON.toJSONString(order), 3);
 
         return order;
     }
