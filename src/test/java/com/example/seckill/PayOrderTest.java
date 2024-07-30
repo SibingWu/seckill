@@ -12,7 +12,7 @@ public class PayOrderTest {
     private SeckillActivityService seckillActivityService;
 
     @Test
-    public void payDoneTest() {
+    public void payDoneTest() throws Exception {
 //        seckillActivityService.payOrderProcess("1013282626817101824");
         seckillActivityService.payOrderProcess("");
     }

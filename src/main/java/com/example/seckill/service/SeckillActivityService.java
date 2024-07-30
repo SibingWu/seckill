@@ -3,8 +3,10 @@ package com.example.seckill.service;
 import com.alibaba.fastjson.JSON;
 import com.example.seckill.db.dao.OrderDao;
 import com.example.seckill.db.dao.SeckillActivityDao;
+import com.example.seckill.db.dao.SeckillCommodityDao;
 import com.example.seckill.db.po.Order;
 import com.example.seckill.db.po.SeckillActivity;
+import com.example.seckill.db.po.SeckillCommodity;
 import com.example.seckill.mq.RocketMQService;
 import com.example.seckill.util.SnowFlake;
 import lombok.extern.slf4j.Slf4j;
@@ -28,6 +30,9 @@ public class SeckillActivityService {
 
     @Autowired
     private OrderDao orderDao;
+
+    @Autowired
+    private SeckillCommodityDao seckillCommodityDao;
 
 
     /**
@@ -83,6 +88,14 @@ public class SeckillActivityService {
         rocketMQService.sendDelayMessage(payStatusCheckTopic, JSON.toJSONString(order), 3);
 
         return order;
+    }
+
+    public void pushSeckillInfoToRedis(long seckillActivityId) {
+        SeckillActivity seckillActivity = seckillActivityDao.querySeckillActivityById(seckillActivityId);
+        redisService.setValue("seckillActivity:" + seckillActivityId, JSON.toJSONString(seckillActivity));
+
+        SeckillCommodity seckillCommodity = seckillCommodityDao.querySeckillCommodityById(seckillActivity.getCommodityId());
+        redisService.setValue("seckillCommodity:" + seckillActivity.getCommodityId(), JSON.toJSONString(seckillCommodity));
     }
 
     /**

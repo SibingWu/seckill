@@ -15,6 +15,12 @@ public class RedisService {
     @Autowired
     private JedisPool jedisPool;
 
+    /**
+     * 设置值
+     *
+     * @param key
+     * @param value
+     */
     public RedisService setValue(String key, Long value) {
         Jedis client = jedisPool.getResource();
         client.set(key, value.toString());
@@ -23,6 +29,24 @@ public class RedisService {
         return this; // 方便链式调用 setValue(...).getValue(...)
     }
 
+    /**
+     * 设置值
+     *
+     * @param key
+     * @param value
+     */
+    public void setValue(String key, String value) {
+        Jedis jedisClient = jedisPool.getResource();
+        jedisClient.set(key, value);
+        jedisClient.close();
+    }
+
+    /**
+     * 获取值
+     *
+     * @param key
+     * @return
+     */
     public String getValue(String key) {
         Jedis client = jedisPool.getResource();
         String value = client.get(key);
