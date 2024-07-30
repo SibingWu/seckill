@@ -1,6 +1,7 @@
 package com.example.seckill;
 
 import com.example.seckill.service.RedisService;
+import com.example.seckill.service.SeckillActivityService;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
@@ -39,5 +40,13 @@ public class RedisDemoTest {
         System.out.println("result:"+result);
         String stock =  redisService.getValue("stock:12");
         System.out.println("stock:"+stock);
+    }
+
+    @Autowired
+    SeckillActivityService seckillActivityService;
+
+    @Test
+    public void pushSeckillInfoToRedisTest(){
+        seckillActivityService.pushSeckillInfoToRedis(19);
     }
 }

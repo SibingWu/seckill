@@ -1,5 +1,6 @@
 package com.example.seckill.web;
 
+import com.alibaba.fastjson.JSON;
 import com.example.seckill.db.dao.OrderDao;
 import com.example.seckill.db.dao.SeckillActivityDao;
 import com.example.seckill.db.dao.SeckillCommodityDao;
@@ -9,16 +10,19 @@ import com.example.seckill.db.po.SeckillCommodity;
 import com.example.seckill.service.RedisService;
 import com.example.seckill.service.SeckillActivityService;
 import lombok.extern.slf4j.Slf4j;
+import org.apache.commons.lang3.StringUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Controller;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
+import org.springframework.web.bind.annotation.ResponseBody;
 import org.springframework.web.servlet.ModelAndView;
 
 import java.math.BigDecimal;
 import java.text.ParseException;
 import java.text.SimpleDateFormat;
+import java.util.Date;
 import java.util.List;
 import java.util.Map;
 
@@ -99,8 +103,24 @@ public class SeckillActivityController {
             @PathVariable("seckillActivityId") long seckillActivityId,
             Map<String, Object> resultMap
     ) {
-        SeckillActivity seckillActivity = seckillActivityDao.querySeckillActivityById(seckillActivityId);
-        SeckillCommodity seckillCommodity = seckillCommodityDao.querySeckillCommodityById(seckillActivity.getCommodityId());
+        SeckillActivity seckillActivity;
+        SeckillCommodity seckillCommodity;
+
+        String seckillActivityInfo = redisService.getValue("seckillActivity:" + seckillActivityId);
+        if (StringUtils.isNotEmpty(seckillActivityInfo)) {
+            log.info("redis缓存数据:" + seckillActivityInfo);
+            seckillActivity = JSON.parseObject(seckillActivityInfo, SeckillActivity.class);
+        } else {
+            seckillActivity = seckillActivityDao.querySeckillActivityById(seckillActivityId);
+        }
+
+        String seckillCommodityInfo = redisService.getValue("seckillCommodity:" + seckillActivity.getCommodityId());
+        if (StringUtils.isNotEmpty(seckillCommodityInfo)) {
+            log.info("redis缓存数据:" + seckillCommodityInfo);
+            seckillCommodity = JSON.parseObject(seckillCommodityInfo, SeckillCommodity.class);
+        } else {
+            seckillCommodity = seckillCommodityDao.querySeckillCommodityById(seckillActivityId);
+        }
 
         resultMap.put("seckillActivity", seckillActivity); // seckill_item.html 中用到 <em th:text="'￥'+${seckillActivity.seckillPrice}"></em>
         resultMap.put("seckillCommodity", seckillCommodity); // seckill_item.html 中用到 <h4 th:text="${seckillCommodity.commodityName}"></h4>
@@ -208,5 +228,19 @@ public class SeckillActivityController {
          * 使用 redirect 可以将处理逻辑和结果展示分开，提高代码的清晰度和可维护性。处理逻辑在服务层完成，而最终结果的展示通过重定向到其他页面来完成。
          */
         return "redirect:/seckill/orderQuery/" + orderNo;
+    }
+
+    /**
+     * 获取当前服务器端时间
+     * @return
+     */
+    @ResponseBody
+    @RequestMapping("/seckill/getSystemTime")
+    public String getSystemTime() {
+        // 设置日期格式
+        SimpleDateFormat sdf = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss");
+        // new Date() 为获取当前系统时间
+        String date = sdf.format(new Date());
+        return date;
     }
 }
