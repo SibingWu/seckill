@@ -16,11 +16,13 @@ import org.springframework.stereotype.Controller;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
+import org.springframework.web.bind.annotation.ResponseBody;
 import org.springframework.web.servlet.ModelAndView;
 
 import java.math.BigDecimal;
 import java.text.ParseException;
 import java.text.SimpleDateFormat;
+import java.util.Date;
 import java.util.List;
 import java.util.Map;
 
@@ -226,5 +228,19 @@ public class SeckillActivityController {
          * 使用 redirect 可以将处理逻辑和结果展示分开，提高代码的清晰度和可维护性。处理逻辑在服务层完成，而最终结果的展示通过重定向到其他页面来完成。
          */
         return "redirect:/seckill/orderQuery/" + orderNo;
+    }
+
+    /**
+     * 获取当前服务器端时间
+     * @return
+     */
+    @ResponseBody
+    @RequestMapping("/seckill/getSystemTime")
+    public String getSystemTime() {
+        // 设置日期格式
+        SimpleDateFormat sdf = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss");
+        // new Date() 为获取当前系统时间
+        String date = sdf.format(new Date());
+        return date;
     }
 }
