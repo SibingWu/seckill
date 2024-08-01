@@ -1,5 +1,8 @@
 package com.example.seckill.web;
 
+import com.alibaba.csp.sentinel.Entry;
+import com.alibaba.csp.sentinel.SphU;
+import com.alibaba.csp.sentinel.slots.block.BlockException;
 import com.alibaba.fastjson.JSON;
 import com.example.seckill.db.dao.OrderDao;
 import com.example.seckill.db.dao.SeckillActivityDao;
@@ -92,9 +95,14 @@ public class SeckillActivityController {
     public String activityList(
             Map<String, Object> resultMap
     ) {
-        List<SeckillActivity> seckillActivities = seckillActivityDao.querySeckillActivitysByStatus(1);
-        resultMap.put("seckillActivities", seckillActivities); // seckill_activity.html 中用到 <tr th:each="seckillActivity : ${seckillActivities}">
-        return "seckill_activity";
+        try (Entry entry = SphU.entry("seckills")) {
+            List<SeckillActivity> seckillActivities = seckillActivityDao.querySeckillActivitysByStatus(1);
+            resultMap.put("seckillActivities", seckillActivities); // seckill_activity.html 中用到 <tr th:each="seckillActivity : ${seckillActivities}">
+            return "seckill_activity";
+        } catch (BlockException ex) {
+            log.error("查询秒杀活动的列表被限流 " + ex);
+            return "wait"; // wait.html
+        }
     }
 
     // seckill_activity.html 中用到 <a class='sui-btn btn-block btn-buy'  th:href="@{'/item/'+${seckillActivity.id}}" target='_blank'>立即抢购</a>
