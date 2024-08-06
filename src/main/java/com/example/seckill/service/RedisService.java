@@ -136,4 +136,34 @@ public class RedisService {
         client.srem("seckillActivity_users:" + seckillActivityId, String.valueOf(userId));
         client.close();
     }
+
+    /**
+     * 获取分布式锁
+     * @param lockKey
+     * @param requestId
+     * @param expireTime
+     * @return
+     */
+    public boolean tryGetDistributedLock(String lockKey, String requestId, int expireTime) {
+        Jedis client = jedisPool.getResource();
+        String result = client.set(lockKey, requestId, "NX", "PX", expireTime);
+        client.close();
+
+        return "OK".equals(result); // 注意不能写 result.equals("OK")，因为 result 可能为 null，而 null 是不能调用.equals() 的
+    }
+
+    /**
+     * 释放分布式锁
+     * @param lockKey   锁
+     * @param requestId 请求标识
+     * @return  是否释放成功
+     */
+    public boolean releaseDistributedLock(String lockKey, String requestId) {
+        Jedis client = jedisPool.getResource();
+        String luaScript = "if redis.call('get', KEYS[1]) == ARGV[1] then return redis.call('del', KEYS[1]) else return 0 end";
+        Long result = (Long) client.eval(luaScript, Collections.singletonList(lockKey), Collections.singletonList(requestId));
+        client.close();
+
+        return result == 1L;
+    }
 }
